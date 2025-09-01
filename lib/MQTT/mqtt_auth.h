@@ -1,0 +1,5 @@
+#ifndef MQTT_AUTH_H_
+#define MQTT_AUTH_H_
+#define CONFIG_AUTHENTICATION_USERNAME "mqtt"
+#define CONFIG_AUTHENTICATION_PASSWORD "dfrobot"
+#endif
