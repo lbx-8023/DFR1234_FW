@@ -24,6 +24,8 @@
 #include "DFRobot_C4001.h"
 #include "DFRobot_BMX160.h"
 #include "DFRobot_ENS160.h"
+#include "SmartIOManager.h"
+#include "DFRobot_BloodOxygen_S.h"
 
 class I2CSensor
 {
@@ -207,5 +209,17 @@ public:
 
 private:
     DFRobot_ENS160 *ens160;
+};
+
+class MAX30102Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x57;
+    uint8_t getAddr() const override { return 0x57; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_BloodOxygen_S_I2C *max30102;
 };
 // #endif

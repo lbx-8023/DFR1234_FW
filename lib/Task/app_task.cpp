@@ -18,6 +18,9 @@
 
 #include "SmartIOManager.h"
 
+
+String maxData;
+
 FirmwareUpdater firmwareUpdater; // 固件升级实例
 // 任务句柄
 TaskHandle_t main_handle, wifiConfig_handle, flushConfig_handle, display_handle, mqtt_handle, sensor_handle, mqttJson_handle,
@@ -120,20 +123,24 @@ void start_task(void) {
   vTaskDelay(200);
   xTaskCreate(display_task, "DISPLAY", 4096 * 5, NULL, 3, &display_handle);
   vTaskDelay(10);
+ 
+  // xTaskCreate(maxLongDeal, "maxLongDeal", 4096 * 3, NULL, 5, NULL);
+  //  vTaskDelay(10);
+
   xTaskCreate(i2c_scan_task, "i2c_scan_task", 4096, &i2cDeviceManager, 3, NULL);
   vTaskDelay(5);
   xTaskCreate(MQTT_ServerTask, "mqtt", 4096, NULL, 2, &mqtt_handle);
   vTaskDelay(20);
-  xTaskCreate(SensorHub_Task, "sensor", 4096 * 4, NULL, 6, &sensor_handle);
+  xTaskCreate(SensorHub_Task, "sensor", 4096 * 8, NULL, 6, &sensor_handle);
   vTaskDelay(5);
   xTaskCreate(mqttPublishTask, "mqttPublishTask", 4096 * 4, NULL, 7, &mqttPublish_handle);
   vTaskDelay(5);
-
   xTaskCreate(mqttHandlerTask, "SubTask", 4096 * 5, NULL, 8, &mqttJson_handle);
   vTaskDelay(5);
   xTaskCreate(buttonPollTask, "buttonPollTask", 2048, NULL, 2, NULL);
   vTaskDelay(5);
   xTaskCreate(datLedTask, "datLedTask", 2048, NULL, 1, NULL);
+  
 }
 
 /**
@@ -531,3 +538,4 @@ void datLedTask(void *args) {
     }
   }
 }
+

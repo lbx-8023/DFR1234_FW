@@ -73,8 +73,8 @@ class DFRobot_ENS160
 {
 public:
   #define NO_ERR             0    // No error
-  #define ERR_DATA_BUS     (-1)   // Data bus error
-  #define ERR_IC_VERSION   (-2)   // Chip version error
+  #define ERR_DATA_BUS       -1   // Data bus error
+  #define ERR_IC_VERSION     -2   // Chip version error
 
 /************************* Interrupt Pin Configuration *******************************/
   /**

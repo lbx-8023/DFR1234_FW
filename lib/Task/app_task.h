@@ -14,6 +14,8 @@
 #include "freertos/event_groups.h"
 #include "WiFi.h"
 
+
+
 /**
  * @brief 系统状态结构体
  * 
@@ -136,4 +138,6 @@ void MyWiFiEvent(WiFiEvent_t event);
  * @details 定期扫描I2C总线，发现并管理传感器设备。
  */
 void i2c_scan_task(void *args);
+
+
 // #endif

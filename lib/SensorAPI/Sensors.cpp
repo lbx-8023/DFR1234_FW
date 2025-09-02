@@ -270,7 +270,7 @@ bool ENS160Sensor::init()
 
 void ENS160Sensor::callback()
 {   
-    char tempStr[128];
+    char tempStr[64];
     
     //uint8_t Status = ens160->getENS160Status();
     //uint8_t AQI = ens160->getAQI();
@@ -279,4 +279,29 @@ void ENS160Sensor::callback()
 
     sprintf(tempStr, "\"ens160_TVOC\":%d,\"ens160_ECO2\":%d",TVOC, ECO2);
     data = String(tempStr);
+}
+
+bool MAX30102Sensor::init()
+{
+    name = "MAX30102Sensor";
+    max30102 = new DFRobot_BloodOxygen_S_I2C(&Wire1,0x57);
+
+    max30102->begin();
+    max30102->begin();
+    max30102->begin();
+    max30102->sensorStartCollect();
+    return true;
+}
+
+void MAX30102Sensor::callback()
+{   
+    char tempStr[64];
+    static uint8_t skip= 0;
+
+    if(skip++ == 40){
+      max30102->getHeartbeatSPO2();
+      sprintf(tempStr, "\"max30102_SPO2\":%d,\"max30102_HeartRate\":%d", max30102->_sHeartbeatSPO2.SPO2, max30102->_sHeartbeatSPO2.Heartbeat);
+      data = String(tempStr);
+      skip = 0;
+    }
 }
