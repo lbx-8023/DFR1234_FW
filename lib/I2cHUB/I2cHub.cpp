@@ -118,6 +118,9 @@ void I2CDeviceManager::searchI2CDevices()
                     case MAX30102Sensor::addr:
                         enqueue(addr, new MAX30102Sensor());
                         break;
+                    case SCD4XSensor::addr:
+                        enqueue(addr, new SCD4XSensor());
+                        break;
                     // case 0x76:
                     // case Axis9OrientationSensor::addr:
                     //     enqueue(Axis9OrientationSensor::addr, new Axis9OrientationSensor());

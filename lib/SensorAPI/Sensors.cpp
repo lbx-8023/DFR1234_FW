@@ -300,23 +300,48 @@ void MAX30102Sensor::callback()
     static uint16_t HeartRate = 0, SPO2 = 0;
 
     if(skip++ == 10){
-      max30102->getHeartbeatSPO2();
-      if(max30102->_sHeartbeatSPO2.SPO2 > 0){
-        sprintf(sop2Str,"\"max30102_SPO2\":%d",max30102->_sHeartbeatSPO2.SPO2);
-        SPO2 = max30102->_sHeartbeatSPO2.SPO2;
-      }else{
-        sprintf(sop2Str,"\"max30102_SPO2\":%d", SPO2);
-      }
-      if(max30102->_sHeartbeatSPO2.Heartbeat > 0){
-        sprintf(heartRateStr,"\"max30102_HeartRate\":%d",max30102->_sHeartbeatSPO2.Heartbeat);
-        HeartRate = max30102->_sHeartbeatSPO2.Heartbeat;
-      }else{
-        sprintf(heartRateStr,"\"max30102_HeartRate\":%d", HeartRate);
-      }
-      //sprintf(tempStr, "\"max30102_SPO2\":%d,\"max30102_HeartRate\":%d", max30102->_sHeartbeatSPO2.SPO2, max30102->_sHeartbeatSPO2.Heartbeat);
-      data = String(sop2Str + String(",") + heartRateStr);
-      //printf("%s",data.c_str());
-      //printf("i am here\n");
-      skip = 0;
+        max30102->getHeartbeatSPO2();
+        if(max30102->_sHeartbeatSPO2.SPO2 > 0){
+            sprintf(sop2Str,"\"max30102_SPO2\":%d",max30102->_sHeartbeatSPO2.SPO2);
+            SPO2 = max30102->_sHeartbeatSPO2.SPO2;
+        }else{
+            sprintf(sop2Str,"\"max30102_SPO2\":%d", SPO2);
+        }
+        if(max30102->_sHeartbeatSPO2.Heartbeat > 0){
+            sprintf(heartRateStr,"\"max30102_HeartRate\":%d",max30102->_sHeartbeatSPO2.Heartbeat);
+            HeartRate = max30102->_sHeartbeatSPO2.Heartbeat;
+        }else{
+            sprintf(heartRateStr,"\"max30102_HeartRate\":%d", HeartRate);
+        }
+        //sprintf(tempStr, "\"max30102_SPO2\":%d,\"max30102_HeartRate\":%d", max30102->_sHeartbeatSPO2.SPO2, max30102->_sHeartbeatSPO2.Heartbeat);
+        data = String(sop2Str + String(",") + heartRateStr);
+        //printf("%s",data.c_str());
+        //printf("i am here\n");
+        skip = 0;
+    }
+}
+
+bool SCD4XSensor::init()
+{ 
+    name = "SCD4XSensor";
+    scd4x = new DFRobot_SCD4X(&Wire1);
+    scd4x->begin();
+    scd4x->enablePeriodMeasure(SCD4X_STOP_PERIODIC_MEASURE);
+    scd4x->setTempComp(4.0);
+    scd4x->getTempComp();
+    scd4x->setSensorAltitude(540);
+    scd4x->getSensorAltitude();
+    scd4x->enablePeriodMeasure(SCD4X_START_PERIODIC_MEASURE);
+    return true;
+}
+
+void SCD4XSensor::callback()
+{
+    if(scd4x->getDataReadyStatus()){
+        char tempStr[64];
+        scd4x->readMeasurement(&data);
+        // printf("\"SCD4X\": {\"CO2\": %d, \"Temperature\": %.2f, \"Humidity\": %.2f}\n",
+        //        data.CO2ppm, data.temp, data.humidity);
+        sprintf(tempStr,"\"scd4x_CO2ppm\":%d", data.CO2ppm);
     }
 }

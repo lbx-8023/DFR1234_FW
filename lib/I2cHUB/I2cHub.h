@@ -112,6 +112,7 @@ private:
         Bmx160Sensor::addr,
         ENS160Sensor::addr,
         MAX30102Sensor::addr,
+        SCD4XSensor::addr,
     };
 };
 
