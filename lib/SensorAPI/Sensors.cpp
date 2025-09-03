@@ -13,22 +13,24 @@ bool GestureFaceDetectionSensor::init()
 }
 void GestureFaceDetectionSensor::callback()
 {
+    static uint16_t faceX = 0,faceY = 0,faceScore = 0,gestureType = 0,gestureScore = 0;
+
     char tempStr[128];
     if (gfd->getFaceNumber() > 0)
     {
-        uint16_t faceX = gfd->getFaceLocationX();
-        uint16_t faceY = gfd->getFaceLocationY();
-        uint16_t faceScore = gfd->getFaceScore();
-        uint16_t gestureType = gfd->getGestureType();
-        uint16_t gestureScore = gfd->getGestureScore();
+        faceX = gfd->getFaceLocationX();
+        faceY = gfd->getFaceLocationY();
+        faceScore = gfd->getFaceScore();
+        gestureType = gfd->getGestureType();
+        gestureScore = gfd->getGestureScore();
         sprintf(tempStr, "\"FaceX\":%d,\"FaceY\":%d,\"GestureType\":%d", faceX, faceY, gestureType);
+        printf("%s\n",tempStr);
+        data = String(tempStr);
     }
-    else
-    {
-        sprintf(tempStr, "\"GestureFace\":\"None\"");
-    }
-
-    data = String(tempStr);
+    // else
+    // {
+    //     sprintf(tempStr, "\"GestureFace\":\"None\"");
+    // }
 }
 
 bool GR10_30Sensor::init()
@@ -287,21 +289,34 @@ bool MAX30102Sensor::init()
     max30102 = new DFRobot_BloodOxygen_S_I2C(&Wire1,0x57);
 
     max30102->begin();
-    max30102->begin();
-    max30102->begin();
     max30102->sensorStartCollect();
     return true;
 }
 
 void MAX30102Sensor::callback()
 {   
-    char tempStr[64];
+    char sop2Str[32], heartRateStr[32];
     static uint8_t skip= 0;
+    static uint16_t HeartRate = 0, SPO2 = 0;
 
-    if(skip++ == 40){
+    if(skip++ == 10){
       max30102->getHeartbeatSPO2();
-      sprintf(tempStr, "\"max30102_SPO2\":%d,\"max30102_HeartRate\":%d", max30102->_sHeartbeatSPO2.SPO2, max30102->_sHeartbeatSPO2.Heartbeat);
-      data = String(tempStr);
+      if(max30102->_sHeartbeatSPO2.SPO2 > 0){
+        sprintf(sop2Str,"\"max30102_SPO2\":%d",max30102->_sHeartbeatSPO2.SPO2);
+        SPO2 = max30102->_sHeartbeatSPO2.SPO2;
+      }else{
+        sprintf(sop2Str,"\"max30102_SPO2\":%d", SPO2);
+      }
+      if(max30102->_sHeartbeatSPO2.Heartbeat > 0){
+        sprintf(heartRateStr,"\"max30102_HeartRate\":%d",max30102->_sHeartbeatSPO2.Heartbeat);
+        HeartRate = max30102->_sHeartbeatSPO2.Heartbeat;
+      }else{
+        sprintf(heartRateStr,"\"max30102_HeartRate\":%d", HeartRate);
+      }
+      //sprintf(tempStr, "\"max30102_SPO2\":%d,\"max30102_HeartRate\":%d", max30102->_sHeartbeatSPO2.SPO2, max30102->_sHeartbeatSPO2.Heartbeat);
+      data = String(sop2Str + String(",") + heartRateStr);
+      //printf("%s",data.c_str());
+      //printf("i am here\n");
       skip = 0;
     }
 }
