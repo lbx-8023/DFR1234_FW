@@ -29,7 +29,7 @@ const uint8_t int_mask_lookup_table[13] = {
 
 DFRobot_BMI160::DFRobot_BMI160()
 {
-  Wire.begin();
+  Wire1.begin();
   Obmi160=(struct bmi160Dev *)malloc(sizeof(struct bmi160Dev));
   //Obmi160->id = BMI160_I2C_ADDR;
   //Obmi160->interface = BMI160_I2C_INTF; 
@@ -849,14 +849,14 @@ int8_t DFRobot_BMI160::getRegs(uint8_t reg_addr, uint8_t *data, uint16_t len, st
 
 int8_t DFRobot_BMI160::I2cGetRegs(struct bmi160Dev *dev, uint8_t reg_addr, uint8_t *data, uint16_t len)
 {
-  Wire.beginTransmission(dev->id);
-  Wire.write(reg_addr);
-  Wire.endTransmission(true);
+  Wire1.beginTransmission(dev->id);
+  Wire1.write(reg_addr);
+  Wire1.endTransmission(true);
   delay(10);
-  Wire.requestFrom(dev->id,len);
+  Wire1.requestFrom(dev->id,len);
 
   for(int i = 0; i < len; i++){
-    data[i]=Wire.read();
+    data[i]=Wire1.read();
     delay(1);
   }
   return BMI160_OK;
@@ -889,20 +889,20 @@ int8_t DFRobot_BMI160::setRegs(uint8_t reg_addr, uint8_t *data, uint16_t len, st
 int8_t DFRobot_BMI160::I2cSetRegs(struct bmi160Dev *dev, uint8_t reg_addr, uint8_t *data, uint16_t len)
 {
   if ((dev->prevAccelCfg.power == BMI160_ACCEL_NORMAL_MODE)||(dev->prevGyroCfg.power == BMI160_GYRO_NORMAL_MODE)){
-    Wire.beginTransmission(dev->id);
-    Wire.write(reg_addr);
+    Wire1.beginTransmission(dev->id);
+    Wire1.write(reg_addr);
     for(int i = 0; i < len; i++){
-      Wire.write(data[i]);
+      Wire1.write(data[i]);
       delay(1);
     }
-    Wire.endTransmission(true);
+    Wire1.endTransmission(true);
   }else{
     for(int i = 0; i < len; i++){
-      Wire.beginTransmission(dev->id);
-      Wire.write(reg_addr);
-      Wire.write(data[i]);
+      Wire1.beginTransmission(dev->id);
+      Wire1.write(reg_addr);
+      Wire1.write(data[i]);
       
-      Wire.endTransmission(true);
+      Wire1.endTransmission(true);
       delay(1);
     }
   }

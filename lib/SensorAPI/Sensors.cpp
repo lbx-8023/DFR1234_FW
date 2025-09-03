@@ -24,13 +24,13 @@ void GestureFaceDetectionSensor::callback()
         gestureType = gfd->getGestureType();
         gestureScore = gfd->getGestureScore();
         sprintf(tempStr, "\"FaceX\":%d,\"FaceY\":%d,\"GestureType\":%d", faceX, faceY, gestureType);
-        printf("%s\n",tempStr);
         data = String(tempStr);
     }
-    // else
-    // {
-    //     sprintf(tempStr, "\"GestureFace\":\"None\"");
-    // }
+    else
+    {
+        sprintf(tempStr, "\"FaceX\":%d,\"FaceY\":%d,\"GestureType\":%d", faceX, faceY, gestureType);
+        data = String(tempStr);
+    }
 }
 
 bool GR10_30Sensor::init()
@@ -337,11 +337,42 @@ bool SCD4XSensor::init()
 
 void SCD4XSensor::callback()
 {
+    char tempStr[64];
     if(scd4x->getDataReadyStatus()){
-        char tempStr[64];
-        scd4x->readMeasurement(&data);
+        
+        scd4x->readMeasurement(&scd4xData);
         // printf("\"SCD4X\": {\"CO2\": %d, \"Temperature\": %.2f, \"Humidity\": %.2f}\n",
         //        data.CO2ppm, data.temp, data.humidity);
-        sprintf(tempStr,"\"scd4x_CO2ppm\":%d", data.CO2ppm);
+        sprintf(tempStr,"\"scd4x_CO2ppm\":%d", scd4xData.CO2ppm);
+        data = String(tempStr);
+    }
+}
+
+bool BMI160Sensor::init()
+{
+    name = "BMI160Sensor";
+    bmi160 = new DFRobot_BMI160;
+    if(bmi160->softReset() != BMI160_OK){
+        return false;  
+    }
+    if (bmi160->I2cInit(0x69) != BMI160_OK){
+        return false;
+    }
+    return true;
+}
+
+void BMI160Sensor::callback()
+{
+    int i = 0;
+    int rslt;
+    int16_t accelGyro[6]={0};
+    char tempStr[128];
+
+    rslt = bmi160->getAccelGyroData(accelGyro);
+    if(rslt == 0){
+        sprintf(tempStr, "\"bmi160_gyr_x\":%.2f,\"bmi160_gyr_y\":%.2f,\"bmi160_gyr_z\":%.2f,\"bmi160_acc_x\":%.2f,\"bmi160_acc_y\":%.2f,\"bmi160_acc_z\":%.2f",
+                accelGyro[0]*3.14/180.0, accelGyro[1]*3.14/180.0, accelGyro[2]*3.14/180.0,
+                accelGyro[3]/16384.0, accelGyro[4]/16384.0, accelGyro[5]/16384.0);
+        data = String(tempStr);
     }
 }

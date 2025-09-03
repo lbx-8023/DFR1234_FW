@@ -113,6 +113,7 @@ private:
         ENS160Sensor::addr,
         MAX30102Sensor::addr,
         SCD4XSensor::addr,
+        BMI160Sensor::addr,
     };
 };
 

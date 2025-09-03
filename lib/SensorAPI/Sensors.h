@@ -27,7 +27,7 @@
 #include "SmartIOManager.h"
 #include "DFRobot_SCD4X.h"
 #include "DFRobot_BloodOxygen_S.h"
-
+#include "DFRobot_BMI160.h"
 
 class I2CSensor
 {
@@ -232,9 +232,21 @@ public:
     uint8_t getAddr() const override { return 0x62; }
     virtual bool init() override;
     void callback() override;
-     DFRobot_SCD4X::sSensorMeasurement_t data;
+     DFRobot_SCD4X::sSensorMeasurement_t scd4xData;
 private:
     DFRobot_SCD4X *scd4x;
+   
+};
+
+class BMI160Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x69;
+    uint8_t getAddr() const override { return 0x69; }
+    virtual bool init() override;
+    void callback() override;
+private:
+    DFRobot_BMI160 *bmi160;
    
 };
 // #endif
