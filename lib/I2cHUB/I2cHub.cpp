@@ -1,17 +1,17 @@
 #include "I2CHub.h"
 
 
-String I2CSensor::getResStr()
+String I2CHub::getResStr()
 {
     return data;
 }
-bool GestureFaceDetectionSensor::init()
+bool GestureFaceDetectionI2CHub::init()
 {
     name = "GestureFaceDetectionSenso";
     gfd = new DFRobot_GestureFaceDetection_I2C(0x72);
     return gfd->begin(&Wire1);
 }
-void GestureFaceDetectionSensor::callback()
+void GestureFaceDetectionI2CHub::callback()
 {
     static uint16_t faceX = 0, faceY = 0, faceScore = 0, gestureType = 0, gestureScore = 0;
 
@@ -35,17 +35,18 @@ void GestureFaceDetectionSensor::callback()
     }
 }
 
-bool GR10_30Sensor::init()
+bool GR10_30I2CHub::init()
 {
-    name = "GR10_30Sensor";
+    name = "GR10_30I2CHub";
     data = "";
     gr10_30 = new DFRobot_GR10_30(/*addr = */ GR10_30_DEVICE_ADDR, /*pWire = */ &Wire1);
     // gr10_30->enGestures(GESTURE_UP | GESTURE_DOWN | GESTURE_LEFT | GESTURE_RIGHT | GESTURE_FORWARD | GESTURE_BACKWARD | GESTURE_CLOCKWISE | GESTURE_COUNTERCLOCKWISE | GESTURE_CLOCKWISE_C | GESTURE_COUNTERCLOCKWISE_C);
     gr10_30->enGestures(GESTURE_UP | GESTURE_DOWN | GESTURE_LEFT | GESTURE_RIGHT);
+    data = String("\"Gesture\":\"0\"");
     return true;
 }
 
-void GR10_30Sensor::callback()
+void GR10_30I2CHub::callback()
 {
     char res[64] = "";
     if (gr10_30->getDataReady())
@@ -103,22 +104,18 @@ void GR10_30Sensor::callback()
         {
             sprintf(res, "\"Gesture\":%s", "\"Continuous counterclockwise\"");
         }
+        data = String(res);
     }
-    else
-    {
-        sprintf(res, "\"Gesture\":%s", "\"None\"");
-    }
-    data = String(res);
 }
 
-bool BME280Sensor::init()
+bool BME280I2CHub::init()
 {
     bme = new DFRobot_BME280_IIC(&Wire1, 0x77);
-    name = "BME280Sensor";
+    name = "BME280I2CHub";
     bme->reset();
     return bme->begin() == DFRobot_BME280::eStatusOK;
 }
-void BME280Sensor::callback()
+void BME280I2CHub::callback()
 {
     char tempStr[180];
     float temp = bme->getTemperature();
@@ -129,16 +126,16 @@ void BME280Sensor::callback()
     data = String(tempStr);
 }
 
-bool URM09Sensor::init()
+bool URM09I2CHub::init()
 {
     URM09 = new DFRobot_URM09();
-    name = "URM09Sensor";
+    name = "URM09I2CHub";
     bool ret = URM09->begin();
     URM09->setModeRange(MEASURE_MODE_AUTOMATIC, MEASURE_RANG_500);
     delay(20);
     return ret;
 }
-void URM09Sensor::callback()
+void URM09I2CHub::callback()
 {
     char tempStr[64];
     // URM09->measurement();                 // Send ranging command
@@ -148,13 +145,13 @@ void URM09Sensor::callback()
     data = String(tempStr);
 }
 
-bool ColorSensor::init()
+bool ColorI2CHub::init()
 {
     tcs = new DFRobot_TCS34725(&Wire1, TCS34725_ADDRESS, TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_1X);
-    name = "ColorSensor";
+    name = "ColorI2CHub";
     return tcs->begin() == 0;
 }
-void ColorSensor::callback()
+void ColorI2CHub::callback()
 {
     char tempStr[64];
     uint16_t clear, red, green, blue;
@@ -164,14 +161,14 @@ void ColorSensor::callback()
     data = String(tempStr);
 }
 
-bool AmbientLightSensor::init()
+bool AmbientLightI2CHub::init()
 {
-    name = "AmbientLightSensor";
+    name = "AmbientLightI2CHub";
     als = new DFRobot_VEML7700();
     als->begin(); // Init
     return true;
 }
-void AmbientLightSensor::callback()
+void AmbientLightI2CHub::callback()
 {
     char tempStr[64];
     float lux;
@@ -180,9 +177,9 @@ void AmbientLightSensor::callback()
     data = String(tempStr);
 }
 
-bool TripleAxisAccelerometerSensor::init()
+bool TripleAxisAccelerometerI2CHub::init()
 {
-    name = "TripleAxisAccelerometerSensor";
+    name = "TripleAxisAccelerometerI2CHub";
     acce = new DFRobot_LIS2DH12(&Wire1, 0x18);
     bool ret = acce->begin();
     acce->setRange(/*Range = */ DFRobot_LIS2DH12::eLIS2DH12_16g);
@@ -190,7 +187,7 @@ bool TripleAxisAccelerometerSensor::init()
     return ret;
 }
 
-void TripleAxisAccelerometerSensor::callback()
+void TripleAxisAccelerometerI2CHub::callback()
 {
     char tempStr[64];
     long ax, ay, az;
@@ -201,9 +198,9 @@ void TripleAxisAccelerometerSensor::callback()
     data = String(tempStr);
 }
 
-bool mmWaveSensor::init()
+bool mmWaveI2CHub::init()
 {
-    name = "mmWaveSensor";
+    name = "mmWaveI2CHub";
     radar = new DFRobot_C4001_I2C(&Wire1, 0x2A);
     bool ret = radar->begin();
     radar->setSensorMode(eExitMode);
@@ -213,20 +210,20 @@ bool mmWaveSensor::init()
     radar->setDelay(/*trig*/ 100, /*keep*/ 4);
     return ret;
 }
-void mmWaveSensor::callback()
+void mmWaveI2CHub::callback()
 {
     char tempStr[64];
     sprintf(tempStr, "\"motion\":%d", radar->motionDetection() ? 1 : 0);
     data = String(tempStr);
 }
 
-bool UVSensor::init()
+bool UVI2CHub::init()
 {
-    name = "UVSensor";
+    name = "UVI2CHub";
     UVIndex240370Sensor = new DFRobot_UVIndex240370Sensor(&Wire1);
     return UVIndex240370Sensor->begin();
 }
-void UVSensor::callback()
+void UVI2CHub::callback()
 {
     char tempStr[64];
     uint16_t voltage = UVIndex240370Sensor->readUvOriginalData();
@@ -235,14 +232,14 @@ void UVSensor::callback()
     data = String(tempStr);
 }
 
-bool Bmx160Sensor::init()
+bool Bmx160I2CHub::init()
 {
-    name = "Bmx160Sensor";
+    name = "Bmx160I2CHub";
     bmx = new DFRobot_BMX160(&Wire1);
     return bmx->begin();
 }
 
-void Bmx160Sensor::callback()
+void Bmx160I2CHub::callback()
 {
     data = "";
     char tempStr[128];
@@ -261,9 +258,9 @@ void Bmx160Sensor::callback()
     data = String(tempStr);
 }
 
-bool ENS160Sensor::init()
+bool ENS160I2CHub::init()
 {
-    name = "ENS160Sensor";
+    name = "ENS160I2CHub";
     ens160 = new DFRobot_ENS160_I2C(&Wire1);
     ens160->begin();
     ens160->setPWRMode(ENS160_STANDARD_MODE);
@@ -272,22 +269,22 @@ bool ENS160Sensor::init()
     return true;
 }
 
-void ENS160Sensor::callback()
+void ENS160I2CHub::callback()
 {   
     char tempStr[64];
     
     //uint8_t Status = ens160->getENS160Status();
-    //uint8_t AQI = ens160->getAQI();
+    uint8_t AQI = ens160->getAQI();
     uint16_t TVOC = ens160->getTVOC();
     uint16_t ECO2 = ens160->getECO2();
 
-    sprintf(tempStr, "\"ens160_TVOC\":%d,\"ens160_ECO2\":%d",TVOC, ECO2);
+    sprintf(tempStr, "\"ens160_TVOC\":%d,\"ens160_ECO2\":%d,\"ens160_AQI\":%d",TVOC, ECO2, AQI);
     data = String(tempStr);
 }
 
-bool MAX30102Sensor::init()
+bool MAX30102I2CHub::init()
 {
-    name = "MAX30102Sensor";
+    name = "MAX30102I2CHub";
     max30102 = new DFRobot_BloodOxygen_S_I2C(&Wire1,0x57);
 
     max30102->begin();
@@ -295,7 +292,7 @@ bool MAX30102Sensor::init()
     return true;
 }
 
-void MAX30102Sensor::callback()
+void MAX30102I2CHub::callback()
 {   
     char sop2Str[32], heartRateStr[32];
     static uint8_t skip= 0;
@@ -323,9 +320,9 @@ void MAX30102Sensor::callback()
     }
 }
 
-bool SCD4XSensor::init()
+bool SCD4XI2CHub::init()
 { 
-    name = "SCD4XSensor";
+    name = "SCD4XI2CHub";
     scd4x = new DFRobot_SCD4X(&Wire1);
     scd4x->begin();
     scd4x->enablePeriodMeasure(SCD4X_STOP_PERIODIC_MEASURE);
@@ -337,7 +334,7 @@ bool SCD4XSensor::init()
     return true;
 }
 
-void SCD4XSensor::callback()
+void SCD4XI2CHub::callback()
 {
     char tempStr[64];
     if(scd4x->getDataReadyStatus()){
@@ -350,9 +347,9 @@ void SCD4XSensor::callback()
     }
 }
 
-bool BMI160Sensor::init()
+bool BMI160I2CHub::init()
 {
-    name = "BMI160Sensor";
+    name = "BMI160I2CHub";
     bmi160 = new DFRobot_BMI160;
     if(bmi160->softReset() != BMI160_OK){
         return false;  
@@ -363,7 +360,7 @@ bool BMI160Sensor::init()
     return true;
 }
 
-void BMI160Sensor::callback()
+void BMI160I2CHub::callback()
 {
     int i = 0;
     int rslt;

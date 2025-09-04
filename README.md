@@ -256,11 +256,11 @@ except KeyboardInterrupt:
 
 ```
 ## I2C传感器
-`I2CSensor` I2C传感器的基类
-实现新的传感器需要继承`I2CSensor`这个类
+`I2CHub` I2C传感器的基类
+实现新的传感器需要继承`I2CHub`这个类
 实现I2C地址`addr`, 获取数据的回调函数`callback`给data值，初始化传感器`init()`
 ```cpp
-class I2CSensor
+class I2CHub
 {
 public:
     /**
@@ -299,7 +299,7 @@ public:
     String getResStr();
 
     /** @brief 虚析构函数，确保正确释放派生类资源 */
-    virtual ~I2CSensor() = default;
+    virtual ~I2CHub() = default;
 
 protected:
     /** @brief 传感器数据缓存 */
@@ -351,10 +351,10 @@ protected:
 ![](./imgs/img45f267.png)
 ### I2C类
 
-1. SensorAPI中添加新的I2C传感器类并实现
+1. I2cHub中添加新的I2C传感器类并实现
 ![](./imgs/imgb2817d4d.png)
 
-2. 在I2cHUB中添加对应I2C传感器为白名单
+2. 在SmartI2CManager中添加对应I2C传感器为白名单
 ![](./imgs/imga9f4c0e.png)
 
 3. 添加对应的I2C实例
@@ -427,3 +427,20 @@ DWORD get_mac_based_uuid(void) {
   build_unflags = 
     -DARDUINO_USB_MODE=1
 ```
+
+#2025/9/4更新记录
+##调整
+1.去掉了topic_test的订阅
+2.将心率传感器换成了sen0518
+3.增加了sen0626识别到人脸的坐标（原来已经有，但需求书里面写了增加）
+4.当手势传感器未识别到手势时保持上一次的识别结果，去掉了原来的none
+5.去掉了sen0203心率传感器和sen0204肌电传感器
+6.更改了原I2C类传感器的类为`IOHub`和`IOHub`类保持一致，同时也更改了原来I2C类传感器的文件名称已经存放文件夹的名称
+    各个模块的实现以及声明放在了I2cHub文件夹下面，整个I2C设备的管理放在了SmartI2CManager文件夹下，这和IO设备的管理也一致，使得架构更加清晰。
+
+##增加
+1.sen0514 空气质量传感器
+2.sen0518 心率血氧传感器
+3.sen0536 CO2传感器
+4.sen0250 6轴惯性运动传感器
+5.ser0053 9g300°离合舵机
