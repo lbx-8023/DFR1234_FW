@@ -256,11 +256,11 @@ except KeyboardInterrupt:
 
 ```
 ## I2C传感器
-`I2CSensor` I2C传感器的基类
-实现新的传感器需要继承`I2CSensor`这个类
+`I2CHub` I2C传感器的基类
+实现新的传感器需要继承`I2CHub`这个类
 实现I2C地址`addr`, 获取数据的回调函数`callback`给data值，初始化传感器`init()`
 ```cpp
-class I2CSensor
+class I2CHub
 {
 public:
     /**
@@ -299,7 +299,7 @@ public:
     String getResStr();
 
     /** @brief 虚析构函数，确保正确释放派生类资源 */
-    virtual ~I2CSensor() = default;
+    virtual ~I2CHub() = default;
 
 protected:
     /** @brief 传感器数据缓存 */
@@ -351,7 +351,7 @@ protected:
 ![](./imgs/img45f267.png)
 ### I2C类
 
-1. SensorAPI中添加新的I2C传感器类并实现
+1. I2cHub中添加新的I2C传感器类并实现
 ![](./imgs/imgb2817d4d.png)
 
 2. 在I2cHUB中添加对应I2C传感器为白名单

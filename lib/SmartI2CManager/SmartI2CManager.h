@@ -20,7 +20,7 @@
  */
 struct DeviceWrapper
 {
-    I2CSensor *device;
+    I2CHub *device;
     uint8_t fail_count;
 };
 
@@ -45,7 +45,7 @@ public:
      * @param addr 设备I2C地址
      * @param device I2C传感器实例指针
      */
-    void enqueue(uint8_t addr, I2CSensor *device);
+    void enqueue(uint8_t addr, I2CHub *device);
 
     /**
      * @brief 扫描I2C总线上的设备
@@ -93,27 +93,27 @@ private:
     std::map<uint8_t, DeviceWrapper> deviceMap;
 
     /** @brief 设备处理队列（按注册顺序存储传感器指针） */
-    std::vector<I2CSensor *> deviceQueue;
+    std::vector<I2CHub *> deviceQueue;
 
     /** @brief 互斥锁（用于保护多线程环境下的共享资源） */
     SemaphoreHandle_t mutex;
 
     // 预定义需要扫描的设备地址列表
     const std::vector<uint8_t> kTargetDevices = {
-        GestureFaceDetectionSensor::addr,
-        GR10_30Sensor::addr,
-        BME280Sensor::addr,
-        URM09Sensor::addr,
-        ColorSensor::addr,
-        AmbientLightSensor::addr,
-        TripleAxisAccelerometerSensor::addr,
-        mmWaveSensor::addr,
-        UVSensor::addr,
-        Bmx160Sensor::addr,
-        ENS160Sensor::addr,
-        MAX30102Sensor::addr,
-        SCD4XSensor::addr,
-        BMI160Sensor::addr,
+        GestureFaceDetectionI2CHub::addr,
+        GR10_30I2CHub::addr,
+        BME280I2CHub::addr,
+        URM09I2CHub::addr,
+        ColorI2CHub::addr,
+        AmbientLightI2CHub::addr,
+        TripleAxisAccelerometerI2CHub::addr,
+        mmWaveI2CHub::addr,
+        UVI2CHub::addr,
+        Bmx160I2CHub::addr,
+        ENS160I2CHub::addr,
+        MAX30102I2CHub::addr,
+        SCD4XI2CHub::addr,
+        BMI160I2CHub::addr,
     };
 };
 

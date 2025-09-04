@@ -44,7 +44,7 @@ I2CDeviceManager::~I2CDeviceManager()
  * @details 若地址未注册，则初始化设备并加入队列和映射表；
  *          若地址已存在，释放新传入的设备实例（避免内存泄漏）
  */
-void I2CDeviceManager::enqueue(uint8_t addr, I2CSensor *device)
+void I2CDeviceManager::enqueue(uint8_t addr, I2CHub *device)
 {
     if (deviceMap.find(addr) == deviceMap.end())
     {
@@ -85,52 +85,52 @@ void I2CDeviceManager::searchI2CDevices()
                 {
                     switch (addr)
                     {
-                    case GestureFaceDetectionSensor::addr:
-                        enqueue(addr, new GestureFaceDetectionSensor());
+                    case GestureFaceDetectionI2CHub::addr:
+                        enqueue(addr, new GestureFaceDetectionI2CHub());
                         break;
-                    case GR10_30Sensor::addr:
-                        enqueue(addr, new GR10_30Sensor());
+                    case GR10_30I2CHub::addr:
+                        enqueue(addr, new GR10_30I2CHub());
                         break;
-                    case BME280Sensor::addr:
-                        enqueue(addr, new BME280Sensor());
+                    case BME280I2CHub::addr:
+                        enqueue(addr, new BME280I2CHub());
                         break;
-                    case URM09Sensor::addr:
-                        enqueue(addr, new URM09Sensor());
+                    case URM09I2CHub::addr:
+                        enqueue(addr, new URM09I2CHub());
                         break;
-                    case ColorSensor::addr:
-                        enqueue(addr, new ColorSensor());
+                    case ColorI2CHub::addr:
+                        enqueue(addr, new ColorI2CHub());
                         break;
-                    case AmbientLightSensor::addr:
-                        enqueue(addr, new AmbientLightSensor());
+                    case AmbientLightI2CHub::addr:
+                        enqueue(addr, new AmbientLightI2CHub());
                         break;
-                    case TripleAxisAccelerometerSensor::addr:
-                        enqueue(addr, new TripleAxisAccelerometerSensor());
+                    case TripleAxisAccelerometerI2CHub::addr:
+                        enqueue(addr, new TripleAxisAccelerometerI2CHub());
                         break;
-                    case mmWaveSensor::addr:
-                        enqueue(addr, new mmWaveSensor());
+                    case mmWaveI2CHub::addr:
+                        enqueue(addr, new mmWaveI2CHub());
                         break;
-                    case UVSensor::addr:
-                        enqueue(addr, new UVSensor());
+                    case UVI2CHub::addr:
+                        enqueue(addr, new UVI2CHub());
                         break;
-                    case ENS160Sensor::addr:
-                        enqueue(addr, new ENS160Sensor());
+                    case ENS160I2CHub::addr:
+                        enqueue(addr, new ENS160I2CHub());
                         break;
-                    case MAX30102Sensor::addr:
-                        enqueue(addr, new MAX30102Sensor());
+                    case MAX30102I2CHub::addr:
+                        enqueue(addr, new MAX30102I2CHub());
                         break;
-                    case SCD4XSensor::addr:
-                        enqueue(addr, new SCD4XSensor());
+                    case SCD4XI2CHub::addr:
+                        enqueue(addr, new SCD4XI2CHub());
                         break;
-                    case BMI160Sensor::addr:
-                        enqueue(addr, new BMI160Sensor());
+                    case BMI160I2CHub::addr:
+                        enqueue(addr, new BMI160I2CHub());
                         break;
                     // case 0x76:
-                    // case Axis9OrientationSensor::addr:
-                    //     enqueue(Axis9OrientationSensor::addr, new Axis9OrientationSensor());
+                    // case Axis9OrientationI2CHub::addr:
+                    //     enqueue(Axis9OrientationI2CHub::addr, new Axis9OrientationI2CHub());
                     //     break;
                     // 上面的九轴替换为如下的新传感器
-                    case Bmx160Sensor::addr:
-                        enqueue(addr, new Bmx160Sensor());
+                    case Bmx160I2CHub::addr:
+                        enqueue(addr, new Bmx160I2CHub());
                         break;
                     default:
                         break;

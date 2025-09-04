@@ -29,7 +29,7 @@
 #include "DFRobot_BloodOxygen_S.h"
 #include "DFRobot_BMI160.h"
 
-class I2CSensor
+class I2CHub
 {
 public:
     /**
@@ -68,14 +68,14 @@ public:
     String getResStr();
 
     /** @brief 虚析构函数，确保正确释放派生类资源 */
-    virtual ~I2CSensor() = default;
+    virtual ~I2CHub() = default;
 
 protected:
     /** @brief 传感器数据缓存 */
     String data;
 };
 
-class GestureFaceDetectionSensor : public I2CSensor
+class GestureFaceDetectionI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x72;
@@ -87,7 +87,7 @@ private:
     DFRobot_GestureFaceDetection_I2C *gfd;
 };
 
-class GR10_30Sensor : public I2CSensor
+class GR10_30I2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x73;
@@ -98,7 +98,7 @@ public:
 private:
     DFRobot_GR10_30 *gr10_30;
 };
-class BME280Sensor : public I2CSensor
+class BME280I2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x77;
@@ -109,7 +109,7 @@ public:
 private:
     DFRobot_BME280_IIC *bme;
 };
-class URM09Sensor : public I2CSensor
+class URM09I2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x11;
@@ -121,7 +121,7 @@ private:
     DFRobot_URM09 *URM09;
 };
 
-class ColorSensor : public I2CSensor
+class ColorI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x29;
@@ -132,7 +132,7 @@ public:
 private:
     DFRobot_TCS34725 *tcs;
 };
-class AmbientLightSensor : public I2CSensor
+class AmbientLightI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x10;
@@ -143,7 +143,8 @@ public:
 private:
     DFRobot_VEML7700 *als;
 };
-class TripleAxisAccelerometerSensor : public I2CSensor
+
+class TripleAxisAccelerometerI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x18;
@@ -154,7 +155,8 @@ public:
 private:
     DFRobot_LIS2DH12 *acce;
 };
-class mmWaveSensor : public I2CSensor
+
+class mmWaveI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x2A;
@@ -165,7 +167,8 @@ public:
 private:
     DFRobot_C4001_I2C *radar;
 };
-class UVSensor : public I2CSensor
+
+class UVI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x23;
@@ -177,7 +180,7 @@ private:
     DFRobot_UVIndex240370Sensor *UVIndex240370Sensor;
 };
 
-class Axis9OrientationSensor : public I2CSensor
+class Axis9OrientationI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x28;
@@ -189,7 +192,7 @@ private:
     DFRobot_BNO055_IIC *bno;
 };
 
-class Bmx160Sensor : public I2CSensor
+class Bmx160I2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x68;
@@ -201,7 +204,7 @@ private:
     DFRobot_BMX160 *bmx;
 };
 
-class ENS160Sensor : public I2CSensor
+class ENS160I2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x52;
@@ -213,7 +216,7 @@ private:
     DFRobot_ENS160 *ens160;
 };
 
-class MAX30102Sensor : public I2CSensor
+class MAX30102I2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x57;
@@ -225,7 +228,7 @@ private:
     DFRobot_BloodOxygen_S_I2C *max30102;
 };
 
-class SCD4XSensor : public I2CSensor
+class SCD4XI2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x62;
@@ -238,7 +241,7 @@ private:
    
 };
 
-class BMI160Sensor : public I2CSensor
+class BMI160I2CHub : public I2CHub
 {
 public:
     static const uint8_t addr = 0x69;
