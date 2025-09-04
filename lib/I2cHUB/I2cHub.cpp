@@ -42,6 +42,7 @@ bool GR10_30I2CHub::init()
     gr10_30 = new DFRobot_GR10_30(/*addr = */ GR10_30_DEVICE_ADDR, /*pWire = */ &Wire1);
     // gr10_30->enGestures(GESTURE_UP | GESTURE_DOWN | GESTURE_LEFT | GESTURE_RIGHT | GESTURE_FORWARD | GESTURE_BACKWARD | GESTURE_CLOCKWISE | GESTURE_COUNTERCLOCKWISE | GESTURE_CLOCKWISE_C | GESTURE_COUNTERCLOCKWISE_C);
     gr10_30->enGestures(GESTURE_UP | GESTURE_DOWN | GESTURE_LEFT | GESTURE_RIGHT);
+    data = String("\"Gesture\":\"0\"");
     return true;
 }
 
@@ -103,12 +104,8 @@ void GR10_30I2CHub::callback()
         {
             sprintf(res, "\"Gesture\":%s", "\"Continuous counterclockwise\"");
         }
+        data = String(res);
     }
-    else
-    {
-        sprintf(res, "\"Gesture\":%s", "\"None\"");
-    }
-    data = String(res);
 }
 
 bool BME280I2CHub::init()
