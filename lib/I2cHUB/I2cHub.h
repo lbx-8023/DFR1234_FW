@@ -1,129 +1,252 @@
-
 /**
- * @file    I2cHub.h
- * @brief   I2C设备管理中心头文件
+ * @file    sensors.h
+ * @brief   I2C传感器抽象与具体传感器实现
  *
- * @details 定义I2C设备管理器接口，提供自动扫描、注册、数据处理及生命周期管理功能，
- *          支持多传感器接入和线程安全操作。
+ * @details 定义了I2C传感器的抽象基类和多种具体传感器的实现，
+ *
  */
 #pragma once
 #include "global.h"
-#ifndef __I2CHub_H_
-#define __I2CHub_H_
 
- 
-#include "Sensors.h"
-/**
- * @brief 设备包装结构体
- *
- * @details 存储I2C传感器指针及其故障计数，用于设备状态管理
- */
-struct DeviceWrapper
-{
-    I2CSensor *device;
-    uint8_t fail_count;
-};
+// #ifndef __I2CHUB_H_
+// #define __I2CHUB_H_
 
-/**
- * @brief I2C设备管理类
- *
- * @details 提供I2C总线设备的自动扫描、注册、数据处理及生命周期管理，
- *          通过互斥锁保证线程安全，支持多传感器接入。
- */
-class I2CDeviceManager
+#include "DFRobot_LIS2DH12.h"
+#include "DFRobot_BNO055.h"
+#include "DFRobot_UVIndex240370Sensor.h"
+#include "DFRobot_GR10_30.h"
+#include "DFRobot_BME280.h"
+#include "DFRobot_GestureFaceDetection.h"
+#include "DFRobot_LIS.h"
+#include "DFRobot_TCS34725.h"
+#include "DFRobot_URM09.h"
+#include "DFRobot_VEML7700.h"
+#include "DFRobot_C4001.h"
+#include "DFRobot_BMX160.h"
+#include "DFRobot_ENS160.h"
+#include "SmartIOManager.h"
+#include "DFRobot_SCD4X.h"
+#include "DFRobot_BloodOxygen_S.h"
+#include "DFRobot_BMI160.h"
+
+class I2CSensor
 {
 public:
-    /** @brief 构造函数，初始化互斥锁 */
-    I2CDeviceManager();
+    /**
+     * @brief 初始化传感器
+     *
+     * @details 执行传感器的初始化配置，如设置通信速率、校准参数等。
+     */
+    virtual bool init() = 0;
 
-    /** @brief 析构函数，释放所有注册的设备资源 */
-    ~I2CDeviceManager();
+    /** @brief 传感器I2C地址（静态常量） */
+    static const uint8_t addr;
 
     /**
-     * @brief 注册I2C设备
+     * @brief 获取传感器I2C地址
      *
-     * @param addr 设备I2C地址
-     * @param device I2C传感器实例指针
+     * @return uint8_t 传感器的I2C地址
      */
-    void enqueue(uint8_t addr, I2CSensor *device);
+    virtual uint8_t getAddr() const = 0;
+
+    /** @brief 传感器名称 */
+    String name;
 
     /**
-     * @brief 扫描I2C总线上的设备
+     * @brief 传感器数据采集回调函数
      *
-     * @details 遍历I2C地址范围，检测在线设备，自动注册新设备，
-     *          并对离线设备进行故障计数管理。
-     *          建议定期调用此函数（如每3秒一次）。
+     * @details 执行传感器数据采集并更新内部数据缓存。
      */
-    void searchI2CDevices();
+    virtual void callback() = 0;
 
     /**
-     * @brief 处理所有已注册设备的数据采集
+     * @brief 获取传感器数据字符串
      *
-     * @details 遍历设备队列，调用每个传感器的回调函数获取数据，
-     *          并将结果拼接为JSON格式字符串存储在JsonStr中。
+     * @return String 格式化的传感器数据字符串
      */
-    void process();
 
-    /**
-     * @brief 获取所有已注册设备的I2C地址
-     *
-     * @return std::vector<uint8_t> 设备地址列表
-     */
-    std::vector<uint8_t> getAllAddresses() const;
+    String getResStr();
 
-    /**
-     * @brief 获取已注册的I2C设备数量
-     *
-     * @return uint8_t 设备数量（最大255）
-     */
-    uint8_t getI2cCNT();
+    /** @brief 虚析构函数，确保正确释放派生类资源 */
+    virtual ~I2CSensor() = default;
 
-    /**
-     * @brief 获取设备地址的字符串表示
-     *
-     * @return String 地址字符串（格式如"0X50,0X51"）
-     */
-    String getAddrStr();
-
-    /** @brief 存储所有传感器数据的JSON格式字符串 */
-    String JsonStr;
-
-private:
-    /** @brief 设备映射表（键：I2C地址，值：设备包装结构体） */
-    std::map<uint8_t, DeviceWrapper> deviceMap;
-
-    /** @brief 设备处理队列（按注册顺序存储传感器指针） */
-    std::vector<I2CSensor *> deviceQueue;
-
-    /** @brief 互斥锁（用于保护多线程环境下的共享资源） */
-    SemaphoreHandle_t mutex;
-
-    // 预定义需要扫描的设备地址列表
-    const std::vector<uint8_t> kTargetDevices = {
-        GestureFaceDetectionSensor::addr,
-        GR10_30Sensor::addr,
-        BME280Sensor::addr,
-        URM09Sensor::addr,
-        ColorSensor::addr,
-        AmbientLightSensor::addr,
-        TripleAxisAccelerometerSensor::addr,
-        mmWaveSensor::addr,
-        UVSensor::addr,
-        Bmx160Sensor::addr,
-        ENS160Sensor::addr,
-        MAX30102Sensor::addr,
-        SCD4XSensor::addr,
-        BMI160Sensor::addr,
-    };
+protected:
+    /** @brief 传感器数据缓存 */
+    String data;
 };
 
-/**
- * @brief I2C扫描任务函数
- * 
- * @param args I2CDeviceManager实例指针
- * @details 用于创建独立的FreeRTOS任务，定期调用I2C扫描函数。
- *          示例用法：xTaskCreate(i2c_scan_task, "I2C_SCAN", 2048, &manager, 5, NULL);
- */
-void i2c_scan_task(void *args);
+class GestureFaceDetectionSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x72;
+    uint8_t getAddr() const override { return 0x72; }
+    virtual bool init() override;
+    void callback() override;
 
-#endif // __I2CHub_H_
+private:
+    DFRobot_GestureFaceDetection_I2C *gfd;
+};
+
+class GR10_30Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x73;
+    uint8_t getAddr() const override { return 0x73; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_GR10_30 *gr10_30;
+};
+class BME280Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x77;
+    uint8_t getAddr() const override { return 0x77; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_BME280_IIC *bme;
+};
+class URM09Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x11;
+    uint8_t getAddr() const override { return 0x11; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_URM09 *URM09;
+};
+
+class ColorSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x29;
+    uint8_t getAddr() const override { return 0x29; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_TCS34725 *tcs;
+};
+class AmbientLightSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x10;
+    uint8_t getAddr() const override { return 0x10; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_VEML7700 *als;
+};
+class TripleAxisAccelerometerSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x18;
+    uint8_t getAddr() const override { return 0x18; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_LIS2DH12 *acce;
+};
+class mmWaveSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x2A;
+    uint8_t getAddr() const override { return 0x2A; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_C4001_I2C *radar;
+};
+class UVSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x23;
+    uint8_t getAddr() const override { return 0x23; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_UVIndex240370Sensor *UVIndex240370Sensor;
+};
+
+class Axis9OrientationSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x28;
+    uint8_t getAddr() const override { return 0x28; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_BNO055_IIC *bno;
+};
+
+class Bmx160Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x68;
+    uint8_t getAddr() const override { return 0x68; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_BMX160 *bmx;
+};
+
+class ENS160Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x52;
+    uint8_t getAddr() const override { return 0x52; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_ENS160 *ens160;
+};
+
+class MAX30102Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x57;
+    uint8_t getAddr() const override { return 0x57; }
+    virtual bool init() override;
+    void callback() override;
+
+private:
+    DFRobot_BloodOxygen_S_I2C *max30102;
+};
+
+class SCD4XSensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x62;
+    uint8_t getAddr() const override { return 0x62; }
+    virtual bool init() override;
+    void callback() override;
+     DFRobot_SCD4X::sSensorMeasurement_t scd4xData;
+private:
+    DFRobot_SCD4X *scd4x;
+   
+};
+
+class BMI160Sensor : public I2CSensor
+{
+public:
+    static const uint8_t addr = 0x69;
+    uint8_t getAddr() const override { return 0x69; }
+    virtual bool init() override;
+    void callback() override;
+private:
+    DFRobot_BMI160 *bmi160;
+   
+};
+// #endif

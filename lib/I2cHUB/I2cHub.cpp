@@ -1,236 +1,380 @@
-/**
- * @file    I2cHub.cpp
- * @brief   I2C设备管理中心实现
- *
- * @details 提供I2C总线设备的自动扫描、注册、数据处理及生命周期管理，
- *          支持多传感器接入，通过互斥锁保证线程安全，使用故障计数机制管理设备连接状态。
- */
-#include "I2cHub.h"
+#include "I2CHub.h"
 
 
-// 最大连续故障次数（超过则移除设备）
-#define MAX_FAIL_COUNT 3
-
-/**
- * @brief I2C设备管理类构造函数
- *
- * @details 初始化互斥锁，用于保护多线程环境下的设备列表操作
- */
-I2CDeviceManager::I2CDeviceManager()
+String I2CSensor::getResStr()
 {
-    mutex = xSemaphoreCreateMutex();
+    return data;
 }
-
-/**
- * @brief I2C设备管理类析构函数
- *
- * @details 释放所有注册的I2C设备实例，清空设备映射表和队列
- */
-I2CDeviceManager::~I2CDeviceManager()
+bool GestureFaceDetectionSensor::init()
 {
-    for (auto &pair : deviceMap)
+    name = "GestureFaceDetectionSenso";
+    gfd = new DFRobot_GestureFaceDetection_I2C(0x72);
+    return gfd->begin(&Wire1);
+}
+void GestureFaceDetectionSensor::callback()
+{
+    static uint16_t faceX = 0, faceY = 0, faceScore = 0, gestureType = 0, gestureScore = 0;
+
+    char tempStr[128];
+    if (gfd->getFaceNumber() > 0)
     {
-        delete pair.second.device;
+        faceX = gfd->getFaceLocationX();
+        faceY = gfd->getFaceLocationY();
+        faceScore = gfd->getFaceScore();
+        if(gfd->getGestureType()){
+            gestureType = gfd->getGestureType();
+        }
+        gestureScore = gfd->getGestureScore();
+        sprintf(tempStr, "\"FaceX\":%d,\"FaceY\":%d,\"GestureType\":%d", faceX, faceY, gestureType);
+        data = String(tempStr);
     }
-    deviceMap.clear();
-    deviceQueue.clear();
+    else
+    {
+        sprintf(tempStr, "\"FaceX\":%d,\"FaceY\":%d,\"GestureType\":%d", faceX, faceY, gestureType);
+        data = String(tempStr);
+    }
 }
 
-/**
- * @brief 向管理器注册I2C设备
- *
- * @param addr 设备I2C地址
- * @param device I2C传感器实例指针
- * @details 若地址未注册，则初始化设备并加入队列和映射表；
- *          若地址已存在，释放新传入的设备实例（避免内存泄漏）
- */
-void I2CDeviceManager::enqueue(uint8_t addr, I2CSensor *device)
+bool GR10_30Sensor::init()
 {
-    if (deviceMap.find(addr) == deviceMap.end())
+    name = "GR10_30Sensor";
+    data = "";
+    gr10_30 = new DFRobot_GR10_30(/*addr = */ GR10_30_DEVICE_ADDR, /*pWire = */ &Wire1);
+    // gr10_30->enGestures(GESTURE_UP | GESTURE_DOWN | GESTURE_LEFT | GESTURE_RIGHT | GESTURE_FORWARD | GESTURE_BACKWARD | GESTURE_CLOCKWISE | GESTURE_COUNTERCLOCKWISE | GESTURE_CLOCKWISE_C | GESTURE_COUNTERCLOCKWISE_C);
+    gr10_30->enGestures(GESTURE_UP | GESTURE_DOWN | GESTURE_LEFT | GESTURE_RIGHT);
+    return true;
+}
+
+void GR10_30Sensor::callback()
+{
+    char res[64] = "";
+    if (gr10_30->getDataReady())
     {
-        if (device->init()){
-            deviceQueue.push_back(device);
-            deviceMap[addr] = {device, 0};
-        }else{
-            delete device;
+        uint16_t gestures = gr10_30->getGesturesState();
+        if (gestures & GESTURE_UP)
+        {
+            // sprintf(res, "\"Gesture\":%s", "\"UP\"");
+            sprintf(res, "\"Gesture\":%s", "\"3\"");
+        }
+        if (gestures & GESTURE_DOWN)
+        {
+            // sprintf(res, "\"Gesture\":%s", "\"Down\"");
+            sprintf(res, "\"Gesture\":%s", "\"4\"");
+        }
+        if (gestures & GESTURE_LEFT)
+        {
+            // sprintf(res, "\"Gesture\":%s", "\"Left\"");
+            sprintf(res, "\"Gesture\":%s", "\"1\"");
+        }
+        if (gestures & GESTURE_RIGHT)
+        {
+            // sprintf(res, "\"Gesture\":%s", "\"Right\"");
+            sprintf(res, "\"Gesture\":%s", "\"2\"");
+        }
+        if (gestures & GESTURE_FORWARD)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"Forward\"");
+        }
+        if (gestures & GESTURE_BACKWARD)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"Backward\"");
+        }
+        if (gestures & GESTURE_CLOCKWISE)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"Clockwise\"");
+        }
+        if (gestures & GESTURE_COUNTERCLOCKWISE)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"Contrarotate\"");
+        }
+        if (gestures & GESTURE_WAVE)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"Wave\"");
+        }
+        if (gestures & GESTURE_HOVER)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"Hover\"");
+        }
+        if (gestures & GESTURE_CLOCKWISE_C)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"clockwise\"");
+        }
+        if (gestures & GESTURE_COUNTERCLOCKWISE_C)
+        {
+            sprintf(res, "\"Gesture\":%s", "\"Continuous counterclockwise\"");
         }
     }
     else
     {
-        delete device;
+        sprintf(res, "\"Gesture\":%s", "\"None\"");
     }
+    data = String(res);
 }
 
-/**
- * @brief 扫描I2C总线上的设备
- *
- * @details 1. 遍历I2C地址范围（1-126），检测在线设备
- *          2. 对新发现的设备自动创建对应传感器实例并注册
- *          3. 对连续丢失的设备进行故障计数，超过阈值则移除
- */
-void I2CDeviceManager::searchI2CDevices()
+bool BME280Sensor::init()
 {
-    std::set<uint8_t> foundAddrs;
+    bme = new DFRobot_BME280_IIC(&Wire1, 0x77);
+    name = "BME280Sensor";
+    bme->reset();
+    return bme->begin() == DFRobot_BME280::eStatusOK;
+}
+void BME280Sensor::callback()
+{
+    char tempStr[180];
+    float temp = bme->getTemperature();
+    uint32_t press = bme->getPressure();
+    float alti = bme->calAltitude(1015.0, press);
+    float humi = bme->getHumidity();
+    sprintf(tempStr, "\"Temperature\":%.1f,\"Pressure\":%d,\"Altitude\":%.2f,\"Humidity\":%.1f", temp, press, alti, humi);
+    data = String(tempStr);
+}
 
-    // for (uint8_t addr = 1; addr < 127; ++addr)
-    for(const auto addr : this->kTargetDevices)
-    {
-        if (xSemaphoreTake(mutex, portMAX_DELAY)) {//  申请锁
-            Wire1.beginTransmission(addr);
-            if (Wire1.endTransmission() == 0)
-            {
-                foundAddrs.insert(addr);
-                // 若设备未注册，则根据地址创建对应传感器实例
-                if (deviceMap.find(addr) == deviceMap.end())
-                {
-                    switch (addr)
-                    {
-                    case GestureFaceDetectionSensor::addr:
-                        enqueue(addr, new GestureFaceDetectionSensor());
-                        break;
-                    case GR10_30Sensor::addr:
-                        enqueue(addr, new GR10_30Sensor());
-                        break;
-                    case BME280Sensor::addr:
-                        enqueue(addr, new BME280Sensor());
-                        break;
-                    case URM09Sensor::addr:
-                        enqueue(addr, new URM09Sensor());
-                        break;
-                    case ColorSensor::addr:
-                        enqueue(addr, new ColorSensor());
-                        break;
-                    case AmbientLightSensor::addr:
-                        enqueue(addr, new AmbientLightSensor());
-                        break;
-                    case TripleAxisAccelerometerSensor::addr:
-                        enqueue(addr, new TripleAxisAccelerometerSensor());
-                        break;
-                    case mmWaveSensor::addr:
-                        enqueue(addr, new mmWaveSensor());
-                        break;
-                    case UVSensor::addr:
-                        enqueue(addr, new UVSensor());
-                        break;
-                    case ENS160Sensor::addr:
-                        enqueue(addr, new ENS160Sensor());
-                        break;
-                    case MAX30102Sensor::addr:
-                        enqueue(addr, new MAX30102Sensor());
-                        break;
-                    case SCD4XSensor::addr:
-                        enqueue(addr, new SCD4XSensor());
-                        break;
-                    case BMI160Sensor::addr:
-                        enqueue(addr, new BMI160Sensor());
-                        break;
-                    // case 0x76:
-                    // case Axis9OrientationSensor::addr:
-                    //     enqueue(Axis9OrientationSensor::addr, new Axis9OrientationSensor());
-                    //     break;
-                    // 上面的九轴替换为如下的新传感器
-                    case Bmx160Sensor::addr:
-                        enqueue(addr, new Bmx160Sensor());
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                else
-                {
-                    // 设备在线，重置故障计数
-                    deviceMap[addr].fail_count = 0;
-                }
-            }
-            xSemaphoreGive(mutex); //  释放锁/
+bool URM09Sensor::init()
+{
+    URM09 = new DFRobot_URM09();
+    name = "URM09Sensor";
+    bool ret = URM09->begin();
+    URM09->setModeRange(MEASURE_MODE_AUTOMATIC, MEASURE_RANG_500);
+    delay(20);
+    return ret;
+}
+void URM09Sensor::callback()
+{
+    char tempStr[64];
+    // URM09->measurement();                 // Send ranging command
+    float temp = URM09->getTemperature(); // Read temperature
+    int16_t dist = URM09->getDistance();  // Read distance
+    sprintf(tempStr, "\"UltrasonicSensor\":%d", dist);
+    data = String(tempStr);
+}
+
+bool ColorSensor::init()
+{
+    tcs = new DFRobot_TCS34725(&Wire1, TCS34725_ADDRESS, TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_1X);
+    name = "ColorSensor";
+    return tcs->begin() == 0;
+}
+void ColorSensor::callback()
+{
+    char tempStr[64];
+    uint16_t clear, red, green, blue;
+    tcs->getRGBC(&red, &green, &blue, &clear);
+    tcs->lock();
+    sprintf(tempStr, "\"R\":%d,\"G\":%d,\"B\":%d", red, green, blue);
+    data = String(tempStr);
+}
+
+bool AmbientLightSensor::init()
+{
+    name = "AmbientLightSensor";
+    als = new DFRobot_VEML7700();
+    als->begin(); // Init
+    return true;
+}
+void AmbientLightSensor::callback()
+{
+    char tempStr[64];
+    float lux;
+    als->getALSLux(lux); // Get the measured ambient light value
+    sprintf(tempStr, "\"Lux\":%.3f", lux);
+    data = String(tempStr);
+}
+
+bool TripleAxisAccelerometerSensor::init()
+{
+    name = "TripleAxisAccelerometerSensor";
+    acce = new DFRobot_LIS2DH12(&Wire1, 0x18);
+    bool ret = acce->begin();
+    acce->setRange(/*Range = */ DFRobot_LIS2DH12::eLIS2DH12_16g);
+    acce->setAcquireRate(/*Rate = */ DFRobot_LIS2DH12::eLowPower_10Hz);
+    return ret;
+}
+
+void TripleAxisAccelerometerSensor::callback()
+{
+    char tempStr[64];
+    long ax, ay, az;
+    ax = acce->readAccX(); // Get the acceleration in the x direction
+    ay = acce->readAccY(); // Get the acceleration in the y direction
+    az = acce->readAccZ(); // Get the acceleration in the z direction
+    sprintf(tempStr, "\"x\":%ld,\"y\":%ld,\"z\":%ld", ax, ay, az);
+    data = String(tempStr);
+}
+
+bool mmWaveSensor::init()
+{
+    name = "mmWaveSensor";
+    radar = new DFRobot_C4001_I2C(&Wire1, 0x2A);
+    bool ret = radar->begin();
+    radar->setSensorMode(eExitMode);
+    radar->setDetectionRange(/*min*/ 30, /*max*/ 1000, /*trig*/ 300);
+    radar->setTrigSensitivity(1);
+    radar->setKeepSensitivity(2);
+    radar->setDelay(/*trig*/ 100, /*keep*/ 4);
+    return ret;
+}
+void mmWaveSensor::callback()
+{
+    char tempStr[64];
+    sprintf(tempStr, "\"motion\":%d", radar->motionDetection() ? 1 : 0);
+    data = String(tempStr);
+}
+
+bool UVSensor::init()
+{
+    name = "UVSensor";
+    UVIndex240370Sensor = new DFRobot_UVIndex240370Sensor(&Wire1);
+    return UVIndex240370Sensor->begin();
+}
+void UVSensor::callback()
+{
+    char tempStr[64];
+    uint16_t voltage = UVIndex240370Sensor->readUvOriginalData();
+    uint16_t index = UVIndex240370Sensor->readUvIndexData();
+    sprintf(tempStr, "\"UV\":%d", index);
+    data = String(tempStr);
+}
+
+bool Bmx160Sensor::init()
+{
+    name = "Bmx160Sensor";
+    bmx = new DFRobot_BMX160(&Wire1);
+    return bmx->begin();
+}
+
+void Bmx160Sensor::callback()
+{
+    data = "";
+    char tempStr[128];
+    sBmx160SensorData_t Omagn, Ogyro, Oaccel;
+    bmx->getAllData(&Omagn, &Ogyro, &Oaccel);
+
+    sprintf(tempStr,
+            // "\"acc\":{\"x\":%.1f,\"y\":%.1f,\"z\":%.1f}",
+            "\"mag\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+            "\"gyr\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+            "\"acc\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f}",
+            Omagn.x, Omagn.y, Omagn.z,
+            Ogyro.x, Ogyro.y, Ogyro.z,
+            Oaccel.x, Oaccel.y, Oaccel.z
+    );
+    data = String(tempStr);
+}
+
+bool ENS160Sensor::init()
+{
+    name = "ENS160Sensor";
+    ens160 = new DFRobot_ENS160_I2C(&Wire1);
+    ens160->begin();
+    ens160->setPWRMode(ENS160_STANDARD_MODE);
+    ens160->setTempAndHum(/*temperature=*/25.0, /*humidity=*/50.0);
+
+    return true;
+}
+
+void ENS160Sensor::callback()
+{   
+    char tempStr[64];
+    
+    //uint8_t Status = ens160->getENS160Status();
+    //uint8_t AQI = ens160->getAQI();
+    uint16_t TVOC = ens160->getTVOC();
+    uint16_t ECO2 = ens160->getECO2();
+
+    sprintf(tempStr, "\"ens160_TVOC\":%d,\"ens160_ECO2\":%d",TVOC, ECO2);
+    data = String(tempStr);
+}
+
+bool MAX30102Sensor::init()
+{
+    name = "MAX30102Sensor";
+    max30102 = new DFRobot_BloodOxygen_S_I2C(&Wire1,0x57);
+
+    max30102->begin();
+    max30102->sensorStartCollect();
+    return true;
+}
+
+void MAX30102Sensor::callback()
+{   
+    char sop2Str[32], heartRateStr[32];
+    static uint8_t skip= 0;
+    static uint16_t HeartRate = 0, SPO2 = 0;
+
+    if(skip++ == 10){
+        max30102->getHeartbeatSPO2();
+        if(max30102->_sHeartbeatSPO2.SPO2 > 0){
+            sprintf(sop2Str,"\"max30102_SPO2\":%d",max30102->_sHeartbeatSPO2.SPO2);
+            SPO2 = max30102->_sHeartbeatSPO2.SPO2;
+        }else{
+            sprintf(sop2Str,"\"max30102_SPO2\":%d", SPO2);
         }
-    }
-
-    // 处理离线设备：故障计数，超过阈值则移除
-    for (auto it = deviceMap.begin(); it != deviceMap.end();)
-    {
-        if (foundAddrs.find(it->first) == foundAddrs.end())
-        {
-            it->second.fail_count++; // 离线一次，故障计数加一
-            if (it->second.fail_count >= MAX_FAIL_COUNT)
-            {
-                // 从队列中删除对应的设备指针
-                deviceQueue.erase(std::remove(deviceQueue.begin(), deviceQueue.end(), it->second.device), deviceQueue.end());
-                // 释放设备实例内存
-                delete it->second.device;
-                // 从映射表中删除该设备
-                it = deviceMap.erase(it);
-                continue;
-            }
+        if(max30102->_sHeartbeatSPO2.Heartbeat > 0){
+            sprintf(heartRateStr,"\"max30102_HeartRate\":%d",max30102->_sHeartbeatSPO2.Heartbeat);
+            HeartRate = max30102->_sHeartbeatSPO2.Heartbeat;
+        }else{
+            sprintf(heartRateStr,"\"max30102_HeartRate\":%d", HeartRate);
         }
-        ++it;
+        //sprintf(tempStr, "\"max30102_SPO2\":%d,\"max30102_HeartRate\":%d", max30102->_sHeartbeatSPO2.SPO2, max30102->_sHeartbeatSPO2.Heartbeat);
+        data = String(sop2Str + String(",") + heartRateStr);
+        //printf("%s",data.c_str());
+        //printf("i am here\n");
+        skip = 0;
     }
 }
 
-/**
- * @brief 处理所有已注册设备的数据采集
- * 
- * @details 1. 遍历设备队列，通过互斥锁保证同一时间只有一个设备访问总线
- *          2. 调用传感器回调函数获取数据，并拼接成JSON格式字符串
- */
-void I2CDeviceManager::process()
-{
-    String tempStr = "";
-    for (auto device : deviceQueue)
-    {
-        if (xSemaphoreTake(mutex, portMAX_DELAY)) //  申请锁
-        {
-            device->callback();
-            tempStr += device->getResStr() + ",";
-            xSemaphoreGive(mutex); //  释放锁
-        }
-    }
-    JsonStr = tempStr;
+bool SCD4XSensor::init()
+{ 
+    name = "SCD4XSensor";
+    scd4x = new DFRobot_SCD4X(&Wire1);
+    scd4x->begin();
+    scd4x->enablePeriodMeasure(SCD4X_STOP_PERIODIC_MEASURE);
+    scd4x->setTempComp(4.0);
+    scd4x->getTempComp();
+    scd4x->setSensorAltitude(540);
+    scd4x->getSensorAltitude();
+    scd4x->enablePeriodMeasure(SCD4X_START_PERIODIC_MEASURE);
+    return true;
 }
 
-/**
- * @brief 获取所有已注册设备的I2C地址
- * 
- * @return std::vector<uint8_t> 设备地址列表
- */
-std::vector<uint8_t> I2CDeviceManager::getAllAddresses() const
+void SCD4XSensor::callback()
 {
-    std::vector<uint8_t> addresses;
-    for (const auto &pair : deviceMap)
-    {
-        addresses.push_back(pair.first);
+    char tempStr[64];
+    if(scd4x->getDataReadyStatus()){
+        
+        scd4x->readMeasurement(&scd4xData);
+        // printf("\"SCD4X\": {\"CO2\": %d, \"Temperature\": %.2f, \"Humidity\": %.2f}\n",
+        //        data.CO2ppm, data.temp, data.humidity);
+        sprintf(tempStr,"\"scd4x_CO2ppm\":%d", scd4xData.CO2ppm);
+        data = String(tempStr);
     }
-    return addresses;
 }
 
-/**
- * @brief 获取已注册的I2C设备数量
- * 
- * @return uint8_t 设备数量
- */
-uint8_t I2CDeviceManager::getI2cCNT()
+bool BMI160Sensor::init()
 {
-    return static_cast<uint8_t>(deviceQueue.size());
+    name = "BMI160Sensor";
+    bmi160 = new DFRobot_BMI160;
+    if(bmi160->softReset() != BMI160_OK){
+        return false;  
+    }
+    if (bmi160->I2cInit(0x69) != BMI160_OK){
+        return false;
+    }
+    return true;
 }
 
-/**
- * @brief 获取设备地址的字符串表示（如"0X50,0X51"）
- * 
- * @return String 地址字符串
- */
-String I2CDeviceManager::getAddrStr()
+void BMI160Sensor::callback()
 {
-    String addressString;
-    bool first = true;
-    char buf[5];
+    int i = 0;
+    int rslt;
+    int16_t accelGyro[6]={0};
+    char tempStr[128];
 
-    for (const auto &pair : deviceMap)
-    {
-        if (!first)
-            addressString += ",";
-        snprintf(buf, sizeof(buf), "0X%02X", pair.first);
-        addressString += String(buf);
-        first = false;
+    rslt = bmi160->getAccelGyroData(accelGyro);
+    if(rslt == 0){
+        sprintf(tempStr, "\"bmi160_gyr_x\":%.2f,\"bmi160_gyr_y\":%.2f,\"bmi160_gyr_z\":%.2f,\"bmi160_acc_x\":%.2f,\"bmi160_acc_y\":%.2f,\"bmi160_acc_z\":%.2f",
+                accelGyro[0]*3.14/180.0, accelGyro[1]*3.14/180.0, accelGyro[2]*3.14/180.0,
+                accelGyro[3]/16384.0, accelGyro[4]/16384.0, accelGyro[5]/16384.0);
+        data = String(tempStr);
     }
-    return addressString;
 }

@@ -8,7 +8,7 @@
 #include "ConfigParser.h"
 #include "DAT.h"
 #include "FirmwareUpdater.h"
-#include "I2cHub.h"
+#include "SmartI2CManager.h"
 #include "MQTTAPP.h"
 #include "esp32wifi.h"
 #include "msc.h"

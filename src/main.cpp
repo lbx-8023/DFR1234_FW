@@ -14,7 +14,7 @@
 #include "global.h"
 #include <string>
 #include <esp_idf_version.h>
-#include "I2cHub.h"
+#include "SmartI2CManager.h"
 #ifndef ARDUINO_USB_MODE
 #error This ESP32 SoC has no Native USB interface
 #elif ARDUINO_USB_MODE == 1
