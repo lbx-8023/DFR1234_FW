@@ -274,11 +274,11 @@ void ENS160I2CHub::callback()
     char tempStr[64];
     
     //uint8_t Status = ens160->getENS160Status();
-    //uint8_t AQI = ens160->getAQI();
+    uint8_t AQI = ens160->getAQI();
     uint16_t TVOC = ens160->getTVOC();
     uint16_t ECO2 = ens160->getECO2();
 
-    sprintf(tempStr, "\"ens160_TVOC\":%d,\"ens160_ECO2\":%d",TVOC, ECO2);
+    sprintf(tempStr, "\"ens160_TVOC\":%d,\"ens160_ECO2\":%d,\"ens160_AQI\":%d",TVOC, ECO2, AQI);
     data = String(tempStr);
 }
 
