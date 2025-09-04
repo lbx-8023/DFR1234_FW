@@ -354,7 +354,7 @@ protected:
 1. I2cHub中添加新的I2C传感器类并实现
 ![](./imgs/imgb2817d4d.png)
 
-2. 在I2cHUB中添加对应I2C传感器为白名单
+2. 在SmartI2CManager中添加对应I2C传感器为白名单
 ![](./imgs/imga9f4c0e.png)
 
 3. 添加对应的I2C实例
